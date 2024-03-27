@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "*.html": "html",
+        "*.def": "c",
+        "main.h": "c",
+        "stdint.h": "c",
+        "stm32f4xx_hal.h": "c",
+        "stm32f4xx_hal_conf.h": "c",
+        "stdio.h": "c",
+        "pcf8574_lcd.h": "c",
+        "memory.h": "c",
+        "corecrt_memory.h": "c",
+        "stdlib.h": "c"
+    }
+}
