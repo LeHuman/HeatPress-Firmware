@@ -10,6 +10,10 @@
         "pcf8574_lcd.h": "c",
         "memory.h": "c",
         "corecrt_memory.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "pcf8574_address.h": "c",
+        "typeinfo": "c",
+        "lcd_gfx.h": "c",
+        "lcd_menu.h": "c"
     }
 }
