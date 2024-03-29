@@ -12,6 +12,12 @@
 #define LMS_SET_BACK(lms_object, next_lms_object) __LMS_SET_DIR(lms_object, next_lms_object, back)
 #define LMS_SET_UP(lms_object, next_lms_object) __LMS_SET_DIR(lms_object, next_lms_object, up)
 #define LMS_SET_DOWN(lms_object, next_lms_object) __LMS_SET_DIR(lms_object, next_lms_object, down)
+#define LMS_SET_ALL_DIR(lms_object, next_lms_object) \
+    LMS_SET_NEXT(lms_object, next_lms_object);       \
+    LMS_SET_BACK(lms_object, next_lms_object);       \
+    LMS_SET_UP(lms_object, next_lms_object);         \
+    LMS_SET_DOWN(lms_object, next_lms_object)
+
 #define LMS_SET_POS(lms_object, _x, _y) \
     lms_object->base->x = _x;           \
     lms_object->base->y = _y
@@ -143,20 +149,44 @@ typedef struct LMSBtn {
     LMSObj *base;              // Base LMS object
     LMSPage *parent;           // Parent Page this object belongs to
     lms_btn_callback callback; // The callback for this button being pressed
+    char char_nofocus;         // Character to use with no focus
+    char char_focus;           // Character to use with focus
 } LMSBtn;
 
 typedef struct LMSNumSel {
-    LMSObj *base;    // Base LMS object
-    LMSPage *parent; // Parent Page this object belongs to
-    int8_t number;   // The current number for this selector
+    LMSObj *base;           // Base LMS object
+    LMSPage *parent;        // Parent Page this object belongs to
+    int8_t number;          // The current number for this selector
+    char up_char_nofocus;   // Character to use for up arrow with no focus
+    char down_char_nofocus; // Character to use for down arrow with no focus
+    char up_char_focus;     // Character to use for up arrow with focus
+    char down_char_focus;   // Character to use for down arrow with focus
 } LMSNumSel;
 
 typedef struct LMSContext {
     coord vw, vh;          // Viewport width and height
     coord vx, vy;          // Viewport position, top left
+    uint8_t refresh;       // Whether the view should completely refresh
     LMSPage *root_page;    // The root page that is returned to by default
     LMSPage *current_page; // The current page being displayed
     LMSObj *focus;         // The current object that is being focused
+
+    struct default_chars {
+        struct btn {
+            char focus;
+            char nofocus;
+        } btn;
+        struct num {
+            struct up {
+                char focus;
+                char nofocus;
+            } up;
+            struct down {
+                char focus;
+                char nofocus;
+            } down;
+        } num;
+    } default_chars;
 
     uint8_t signaled;
     uint8_t signals[LMS_SIGNAL_COUNT];

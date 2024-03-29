@@ -44,7 +44,11 @@ void lms_set_menu_focus(LMSContext *ctx, LMSObj *object) {
             if (ctx->current_page != to_focus) { // Swap to new page
                 ctx->vx = 0;
                 ctx->vy = 0;
+                ctx->refresh = 1;
                 ctx->current_page = to_focus;
+                if (to_focus->callback != NULL) {
+                    to_focus->callback(to_focus);
+                }
                 // lms_set_menu_page(ctx, to_focus);
             }
         }
@@ -64,6 +68,9 @@ void lms_default_tr_up(LMSObj *object) {
     if (object->object.type == LMSNumSel_t) {
         LMSNumSel *num = (LMSNumSel *)object->object.data;
         num->number = (num->number + 1) % 10;
+        // } else if (object->object.type == LMSPage_t) {
+        //     object->ctx->vy++;
+        //     object->ctx->refresh = 1;
     } else {
         lms_set_menu_focus(object->ctx, object->up);
     }
@@ -75,6 +82,9 @@ void lms_default_tr_down(LMSObj *object) {
         num->number--;
         if (num->number < 0)
             num->number = 9;
+        // } else if (object->object.type == LMSPage_t) {
+        //     object->ctx->vy--;
+        //     object->ctx->refresh = 1;
     } else {
         lms_set_menu_focus(object->ctx, object->down);
     }
@@ -95,6 +105,7 @@ void lms_default_tr_cancel(LMSObj *object) {
 void lms_default_tr_draw(LMSObj *object) {
     coord x = object->x - object->ctx->vx;
     coord y = object->y - object->ctx->vy;
+    uint8_t focus = object->ctx->focus == object;
     switch (object->object.type) {
         case LMSTxt_t:
             LMSTxt *txt = (LMSTxt *)object->object.data;
@@ -102,13 +113,13 @@ void lms_default_tr_draw(LMSObj *object) {
             break;
         case LMSNumSel_t:
             LMSNumSel *num = (LMSNumSel *)object->object.data;
-            lcdGFX_print_char(object->ctx->gfx, x, y, '<');
-            lcdGFX_print_char(object->ctx->gfx, x, y + 2, '>');
+            lcdGFX_print_char(object->ctx->gfx, x, y, focus ? num->up_char_focus : num->up_char_nofocus);
+            lcdGFX_print_char(object->ctx->gfx, x, y + 2, focus ? num->down_char_focus : num->down_char_nofocus);
             lcdGFX_print_char(object->ctx->gfx, x, y + 1, '0' + num->number);
             break;
         case LMSBtn_t:
-            // LMSBtn *btn = (LMSBtn *)object->object.data;
-            lcdGFX_draw_box(object->ctx->gfx, x, y, object->w, object->h, (object->ctx->focus == object) ? 255 : '#');
+            LMSBtn *btn = (LMSBtn *)object->object.data;
+            lcdGFX_draw_box(object->ctx->gfx, x, y, object->w, object->h, focus ? btn->char_focus : btn->char_nofocus);
             break;
         case LMSPage_t:
             // TODO: cut drawn items by page width and height
@@ -221,6 +232,11 @@ LMSNumSel *lms_new_num_sel(LMSPage *page, const char *name) {
     num->base->enter_tr = lms_default_tr_next;
     num->base->z = LMS_PAGE_LAYERS * 2 / 3;
 
+    num->up_char_focus = page->base->ctx->default_chars.num.up.focus;
+    num->down_char_focus = page->base->ctx->default_chars.num.down.focus;
+    num->up_char_nofocus = page->base->ctx->default_chars.num.up.nofocus;
+    num->down_char_nofocus = page->base->ctx->default_chars.num.down.nofocus;
+
     lms_insert_child(page, num->base);
 
     return num;
@@ -239,6 +255,9 @@ LMSBtn *lms_new_btn(LMSPage *page, const char *name, coord width, coord height, 
     btn->base->z = LMS_PAGE_LAYERS / 3;
     btn->base->w = width;
     btn->base->z = height;
+
+    btn->char_focus = page->base->ctx->default_chars.btn.focus;
+    btn->char_nofocus = page->base->ctx->default_chars.btn.nofocus;
 
     lms_insert_child(page, btn->base);
 
@@ -261,6 +280,14 @@ LMSContext *lms_new_menu(LcdGFX *gfx) {
     ctx->gfx = gfx;
     ctx->signaled = 0;
     memset(ctx->signals, 0, sizeof(uint8_t) * LMS_SIGNAL_COUNT);
+
+    ctx->default_chars.btn.focus = 255;
+    ctx->default_chars.btn.nofocus = '#';
+
+    ctx->default_chars.num.up.focus = '^';
+    ctx->default_chars.num.down.focus = 'v';
+    ctx->default_chars.num.up.nofocus = '|';
+    ctx->default_chars.num.down.nofocus = '|';
 
     return ctx;
 }
@@ -323,6 +350,11 @@ void lms_update_menu(LMSContext *ctx) {
                 ctx->signals[i] = 0;
             }
         }
+    }
+
+    if (ctx->refresh) {
+        ctx->refresh = 0;
+        lcdGFX_clear_buffer(ctx->gfx);
     }
 
     ctx->current_page->base->draw_tr(ctx->current_page->base);

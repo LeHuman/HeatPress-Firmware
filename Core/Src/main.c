@@ -135,7 +135,7 @@ int main(void)
     //     TIM3->CCR3 = ticks % 65535;
     // }
 
-    run(&hi2c1, &hi2c2, &hi2c3, &htim2);
+    run(&hi2c1, &hi2c2, &hi2c3, &htim2, &htim3);
 
     while (1) {
     /* USER CODE END WHILE */
