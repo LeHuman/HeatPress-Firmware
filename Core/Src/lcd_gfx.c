@@ -206,14 +206,14 @@ void lcdGFX_play_animated_sprites(LcdGFX *gfx) {
     }
 }
 
-void lcdGFX_store_sprite(LcdGFX *gfx, uint8_t sprite[8], uint8_t slot) {
+void lcdGFX_store_sprite(LcdGFX *gfx, const uint8_t sprite[8], uint8_t slot) {
     gfx->sprites[slot % 8] = sprite;
     pcf8574_lcd_create_char(gfx->lcd, slot % 8, sprite);
     gfx->animated_sprites_flags &= ~(1 << (slot % 8));
 }
 
-void lcdGFX_store_anim_sprite(LcdGFX *gfx, uint8_t anim_sprite[8][8], uint8_t slot) {
-    lcdGFX_store_sprite(gfx, anim_sprite, slot);
+void lcdGFX_store_anim_sprite(LcdGFX *gfx, const uint8_t anim_sprite[8][8], uint8_t slot) {
+    lcdGFX_store_sprite(gfx, (const uint8_t *)anim_sprite, slot); // Reinterpret later
     // gfx->animated_sprites[slot % 8] = anim_sprite;
     gfx->animated_sprites_flags |= 1 << (slot % 8);
 }
@@ -229,7 +229,7 @@ void lcdGFX_clear_graphic(LcdGFX *gfx) {
     }
 }
 
-void lcdGFX_draw_graphic(LcdGFX *gfx, gfx_int x, gfx_int y, gfx_int w, gfx_int h, uint8_t graphic[8][8]) {
+void lcdGFX_draw_graphic(LcdGFX *gfx, gfx_int x, gfx_int y, gfx_int w, gfx_int h, const uint8_t graphic[8][8]) {
     if (gfx->current_graphic.set) {
         lcdGFX_erase_graphic(gfx, gfx->current_graphic.x, gfx->current_graphic.y, gfx->current_graphic.w, gfx->current_graphic.h);
     }

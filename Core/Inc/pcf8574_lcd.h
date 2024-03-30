@@ -45,5 +45,5 @@ void pcf8574_lcd_send_data(PCF8574_LCD *lcd, uint8_t data);
 void pcf8574_lcd_write_string(PCF8574_LCD *lcd, char *str);
 void pcf8574_lcd_set_cursor(PCF8574_LCD *lcd, uint8_t row, uint8_t column);
 void pcf8574_lcd_backlight(PCF8574_LCD *lcd, uint8_t state);
-void pcf8574_lcd_create_char(PCF8574_LCD *lcd, uint8_t location, uint8_t charmap[8]);
+void pcf8574_lcd_create_char(PCF8574_LCD *lcd, uint8_t location, const uint8_t charmap[8]);
 void pcf8574_lcd_fling_char(PCF8574_LCD *lcd, uint8_t charmap[8], uint8_t row, uint8_t column);

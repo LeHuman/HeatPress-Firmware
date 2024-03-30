@@ -45,6 +45,16 @@ static const uint8_t sprite_blank[8] = {
     __________,
     __________,
 };
+static const uint8_t sprite_celsius[8] = {
+    ______HH__,
+    ____HH__HH,
+    ______HH__,
+    __________,
+    __________,
+    __________,
+    __________,
+    __________,
+};
 
 static const uint8_t sprite_alert[8] = {
     __HHHHHH__,

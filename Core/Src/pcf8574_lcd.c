@@ -124,7 +124,7 @@ void pcf8574_lcd_backlight(PCF8574_LCD *lcd, uint8_t state) {
     lcd->backlight = !!state;
 }
 
-void pcf8574_lcd_create_char(PCF8574_LCD *lcd, uint8_t location, uint8_t charmap[8]) {
+void pcf8574_lcd_create_char(PCF8574_LCD *lcd, uint8_t location, const uint8_t charmap[8]) {
     location &= 0x7; // We only have 8 locations 0-7
     pcf8574_lcd_send_cmd(lcd, CMD_SETCGRAMADDR | (location << 3));
     for (int i = 0; i < 8; i++) {

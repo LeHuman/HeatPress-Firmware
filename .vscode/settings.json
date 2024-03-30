@@ -14,6 +14,8 @@
         "pcf8574_address.h": "c",
         "typeinfo": "c",
         "lcd_gfx.h": "c",
-        "lcd_menu.h": "c"
+        "lcd_menu.h": "c",
+        "graphics.h": "c",
+        "setup.h": "c"
     }
 }
