@@ -68,6 +68,7 @@ void lms_default_tr_up(LMSObj *object) {
     if (object->object.type == LMSNumSel_t) {
         LMSNumSel *num = (LMSNumSel *)object->object.data;
         num->number = (num->number + 1) % 10;
+        *num->ext_num = num->number;
         // } else if (object->object.type == LMSPage_t) {
         //     object->ctx->vy++;
         //     object->ctx->refresh = 1;
@@ -82,6 +83,7 @@ void lms_default_tr_down(LMSObj *object) {
         num->number--;
         if (num->number < 0)
             num->number = 9;
+        *num->ext_num = num->number;
         // } else if (object->object.type == LMSPage_t) {
         //     object->ctx->vy--;
         //     object->ctx->refresh = 1;
@@ -223,9 +225,10 @@ void lms_free_text(LMSTxt *txt) {
     free(txt);
 }
 
-LMSNumSel *lms_new_num_sel(LMSPage *page, const char *name) {
+LMSNumSel *lms_new_num_sel(LMSPage *page, const char *name, int8_t *ext_num) {
     LMSNumSel *num = malloc(sizeof(LMSNumSel));
     num->number = 0;
+    num->ext_num = ext_num;
     num->parent = page;
 
     num->base = lms_new_obj(page->base->ctx, (void *)num, LMSNumSel_t, name, 1, 3, 1);

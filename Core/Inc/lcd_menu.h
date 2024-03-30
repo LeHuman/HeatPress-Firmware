@@ -157,6 +157,7 @@ typedef struct LMSNumSel {
     LMSObj *base;           // Base LMS object
     LMSPage *parent;        // Parent Page this object belongs to
     int8_t number;          // The current number for this selector
+    int8_t *ext_num;        // External number to set on update
     char up_char_nofocus;   // Character to use for up arrow with no focus
     char down_char_nofocus; // Character to use for down arrow with no focus
     char up_char_focus;     // Character to use for up arrow with focus
@@ -202,7 +203,7 @@ void lms_default_tr_next(LMSObj *object);
 void lms_default_tr_cancel(LMSObj *object);
 void lms_default_tr_draw(LMSObj *object);
 
-LMSNumSel *lms_new_num_sel(LMSPage *page, const char *name);
+LMSNumSel *lms_new_num_sel(LMSPage *page, const char *name, int8_t *number);
 LMSTxt *lms_new_text(LMSPage *page, const char *text, uint8_t padding);
 LMSBtn *lms_new_btn(LMSPage *page, const char *name, coord width, coord height, lms_btn_callback on_enter);
 LMSPage *lms_new_page(LMSContext *ctx, const char *name, coord width, coord height, lms_page_callback on_focus);

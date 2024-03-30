@@ -16,6 +16,7 @@
         "lcd_gfx.h": "c",
         "lcd_menu.h": "c",
         "graphics.h": "c",
-        "setup.h": "c"
+        "setup.h": "c",
+        "timeout.h": "c"
     }
 }

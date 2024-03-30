@@ -56,7 +56,8 @@ void mcp9601_dma_loop(MCP9601 **probes, int len, int *counter) {
                 probe->read = MCP9601_REG_THERMOCOUPLE_HOT_JUNCTION;
                 break;
         }
-        probe->failed = result;
+        probe->failed = result | probe->status.val.open_circuit | probe->status.val.short_circuit;
+        ;
         *counter += 1;
     } else if (probe == NULL) {
         *counter += 1;

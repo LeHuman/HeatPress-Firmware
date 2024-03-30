@@ -35,6 +35,7 @@ typedef struct MCP9601 {
 
     union MCP9601_TEMP {
         uint8_t buf[2];
+        uint16_t all;
         // struct MCP9601_TEMP_VAL {
         //     uint8_t f : 4;
         //     int16_t i : 12;
