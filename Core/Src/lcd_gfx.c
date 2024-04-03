@@ -53,8 +53,8 @@ void lcdGFX_initialize(LcdGFX *gfx) {
 }
 
 void lcdGFX_clear_buffer(LcdGFX *gfx) {
-    pcf8574_lcd_clear(gfx->lcd);
     memset(gfx->buffer, ' ', gfx->lcd->characters);
+    memset(gfx->buffer_ms, 0, gfx->lcd->characters);
 }
 
 void lcdGFX_clear(LcdGFX *gfx) {

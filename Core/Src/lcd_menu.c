@@ -357,7 +357,7 @@ void lms_update_menu(LMSContext *ctx) {
 
     if (ctx->refresh) {
         ctx->refresh = 0;
-        lcdGFX_clear_buffer(ctx->gfx);
+        lcdGFX_clear(ctx->gfx);
     }
 
     ctx->current_page->base->draw_tr(ctx->current_page->base);
