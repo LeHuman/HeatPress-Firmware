@@ -377,6 +377,8 @@ static inline void setup_timers() {
     HAL_NVIC_EnableIRQ(EXTI1_IRQn);
     HAL_NVIC_EnableIRQ(EXTI4_IRQn);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+    HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(&htim9, TIM_CHANNEL_2);
     HAL_TIM_Encoder_Start_IT(&htim2, TIM_CHANNEL_ALL);
     HAL_TIM_Base_Start_IT(&htim4);
     HAL_TIM_Base_Start_IT(&htim5);
