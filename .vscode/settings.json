@@ -17,6 +17,8 @@
         "lcd_menu.h": "c",
         "graphics.h": "c",
         "setup.h": "c",
-        "timeout.h": "c"
+        "timeout.h": "c",
+        "stdint-gcc.h": "c",
+        "cstdint": "c"
     }
 }

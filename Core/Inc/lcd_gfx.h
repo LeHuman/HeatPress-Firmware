@@ -4,6 +4,7 @@
 
 #include "main.h"
 #include "pcf8574_lcd.h"
+#include "stdint-gcc.h" // BROKEN: Remove me
 
 #define UPDATE_MASK_TYPE uint32_t
 
