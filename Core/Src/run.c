@@ -25,7 +25,8 @@ float pid_setpoint_top, pid_setpoint_btm;
 #define MCP_FAST_WEIGHT 0.4
 #define MCP_AVG_BUF 5
 
-#define PID_MAX_VAL (65535 / 2)
+#define PID_MAX_VAL ((uint32_t)(65535 / 4))
+#define TEMP_ERROR_PERCENT 0.15f
 
 MCP9601 *mcps[4] = {0};
 
@@ -57,6 +58,16 @@ int8_t setpoint_sel_0, setpoint_sel_1, setpoint_sel_2;
 float calc_temp(MCP9601 *mcp_slow, MCP9601 *mcp_fast, float last_temp, timeout_t *timeout) {
     uint8_t s_fail = mcp_slow->failed || mcp_slow->status.val.open_circuit || mcp_slow->status.val.short_circuit || mcp_slow->temp.all == 0;
     uint8_t f_fail = mcp_fast->failed || mcp_fast->status.val.open_circuit || mcp_fast->status.val.short_circuit || mcp_fast->temp.all == 0;
+
+    float last_temp_lt = last_temp - (last_temp * TEMP_ERROR_PERCENT);
+    float last_temp_gt = last_temp + (last_temp * TEMP_ERROR_PERCENT);
+
+    float fast_temp = mcp9601_temperature(mcp_fast);
+    float slow_temp = mcp9601_temperature(mcp_slow);
+
+    s_fail = s_fail && (slow_temp < last_temp_lt || slow_temp > last_temp_gt);
+    f_fail = f_fail && (fast_temp < last_temp_lt || fast_temp > last_temp_gt);
+
     if (s_fail && f_fail) {
         TIM3->CCR3 = (((float)timeout->value) / timeout->timeout) * 65535;
         // TODO: handle worst case
@@ -67,13 +78,13 @@ float calc_temp(MCP9601 *mcp_slow, MCP9601 *mcp_fast, float last_temp, timeout_t
         }
     } else if (s_fail) {
         reset_timeout(timeout);
-        return mcp9601_temperature(mcp_fast);
+        return fast_temp;
     } else if (f_fail) {
         reset_timeout(timeout);
-        return mcp9601_temperature(mcp_slow);
+        return slow_temp;
     } else {
         reset_timeout(timeout);
-        return MCP_SLOW_WEIGHT * mcp9601_temperature(mcp_slow) + MCP_FAST_WEIGHT * mcp9601_temperature(mcp_fast);
+        return MCP_SLOW_WEIGHT * slow_temp + MCP_FAST_WEIGHT * fast_temp;
     }
 }
 
@@ -128,14 +139,14 @@ void on_TIM2_update(TIM_HandleTypeDef *htim) {
 void on_TIM_17ms(TIM_HandleTypeDef *htim) {
     if (enable_pid) {
         if (PID_Compute(&pid_top)) {
-            uint32_t val = (pid_out_top / PID_SCALE) * ((float)PID_MAX_VAL);
+            uint32_t val = pid_out_top == 0.0f ? 0 : ((pid_out_top / PID_SCALE) * ((float)PID_MAX_VAL));
             val = (val > PID_MAX_VAL) ? PID_MAX_VAL : val;
             if (enable_power) {
                 TIM9->CCR1 = val;
             }
         }
         if (PID_Compute(&pid_btm)) {
-            uint32_t val = (pid_out_btm / PID_SCALE) * ((float)PID_MAX_VAL);
+            uint32_t val = pid_out_btm == 0.0f ? 0 : ((pid_out_btm / PID_SCALE) * ((float)PID_MAX_VAL));
             val = (val > PID_MAX_VAL) ? PID_MAX_VAL : val;
             if (enable_power) {
                 TIM9->CCR2 = val;
@@ -159,27 +170,27 @@ void on_TIM_20ms(TIM_HandleTypeDef *htim) {
     }
 }
 
-timeout_t enter_bounce = {350}, back_bounce = {250}, cancel_bounce = {250};
+timeout_t enter_bounce = {50}, back_bounce = {50}, cancel_bounce = {50};
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (enable_input) {
         switch (GPIO_Pin) {
             case Rotary_SW_Pin:
-                if (HAL_GPIO_ReadPin(Rotary_SW_GPIO_Port, Rotary_SW_Pin) == GPIO_PIN_SET) { // Check if button 'down'
+                if (HAL_GPIO_ReadPin(Rotary_SW_GPIO_Port, Rotary_SW_Pin) == GPIO_PIN_RESET) { // Check if button 'down'
                     reset_timeout(&enter_bounce);
-                } else if (check_timeout(&enter_bounce)) {                                  // if button goes up after minimum set by timeout, button push is good.
-                    lms_signal_menu(ctx, BACK);
+                } else if (check_timeout(&enter_bounce)) {                                    // if button goes up after minimum set by timeout, button push is good.
+                    lms_signal_menu(ctx, ENTER);
                 }
                 break;
             case Button_Back_Pin:
-                if (HAL_GPIO_ReadPin(Button_Back_GPIO_Port, Button_Back_Pin) == GPIO_PIN_SET) {
+                if (HAL_GPIO_ReadPin(Button_Back_GPIO_Port, Button_Back_Pin) == GPIO_PIN_RESET) {
                     reset_timeout(&back_bounce);
                 } else if (check_timeout(&back_bounce)) {
                     lms_signal_menu(ctx, BACK);
                 }
                 break;
             case Button_Cancel_Pin:
-                if (HAL_GPIO_ReadPin(Button_Cancel_GPIO_Port, Button_Cancel_Pin) == GPIO_PIN_SET) {
+                if (HAL_GPIO_ReadPin(Button_Cancel_GPIO_Port, Button_Cancel_Pin) == GPIO_PIN_RESET) {
                     reset_timeout(&cancel_bounce);
                 } else if (check_timeout(&cancel_bounce)) {
                     lms_signal_menu(ctx, CANCEL);
@@ -433,11 +444,13 @@ void run() {
     uint32_t noti = 0, noti_last = 0;
 
     while (1) {
-        sprintf(temp_top_str, "% 5.1fC", temperature_top);
-        sprintf(temp_btm_str, "% 5.1fC", temperature_btm);
-        sprintf(pid_top_str, "% 5.1f", pid_out_top / (PID_SCALE / 100));
-        sprintf(pid_btm_str, "% 5.1f", pid_out_btm / (PID_SCALE / 100));
-        sprintf(err_str, "%c%c%c%c", mcp9601_err_str(mcps[1])[0], mcp9601_err_str(mcps[3])[0], mcp9601_err_str(mcps[0])[0], mcp9601_err_str(mcps[2])[0]);
+        if (enable_power) {
+            sprintf(temp_top_str, "% 5.1fC", temperature_top);
+            sprintf(temp_btm_str, "% 5.1fC", temperature_btm);
+            sprintf(pid_top_str, "% 5.1f", pid_out_top == 0.0f ? 0 : (pid_out_top / (PID_SCALE / 100)));
+            sprintf(pid_btm_str, "% 5.1f", pid_out_btm == 0.0f ? 0 : (pid_out_btm / (PID_SCALE / 100)));
+            sprintf(err_str, "%c%c%c%c", mcp9601_err_str(mcps[1])[0], mcp9601_err_str(mcps[3])[0], mcp9601_err_str(mcps[0])[0], mcp9601_err_str(mcps[2])[0]);
+        }
 
         if (noti) {
             noti_last++;
@@ -446,6 +459,14 @@ void run() {
                 noti_last = 0;
                 noti = 0;
             }
+        }
+
+        static timeout_t force_refresh = {10000};
+
+        if (check_timeout(&force_refresh)) {
+            // lcdGFX_clear_buffer(gfx);
+            gfx->refresh = 1;
+            reset_timeout(&force_refresh);
         }
 
         lms_update_menu(ctx);

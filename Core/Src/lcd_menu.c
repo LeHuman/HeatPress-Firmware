@@ -353,6 +353,7 @@ void lms_update_menu(LMSContext *ctx) {
                 ctx->signals[i] = 0;
             }
         }
+        ctx->signaled = 0;
     }
 
     if (ctx->refresh) {

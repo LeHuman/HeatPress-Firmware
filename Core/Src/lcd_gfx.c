@@ -56,6 +56,7 @@ void lcdGFX_clear_buffer(LcdGFX *gfx) {
     memset(gfx->buffer, ' ', gfx->lcd->characters);
     memset(gfx->buffer_ms, 0, gfx->lcd->characters);
     gfx->update = 0xFFFFFFFF;
+    gfx->refresh = 1;
 }
 
 void lcdGFX_clear(LcdGFX *gfx) {
@@ -102,8 +103,8 @@ void lcdGFX_update(LcdGFX *gfx) {
             }
     #else
             UPDATE_MASK_TYPE h = lcdGFX_hash(c);
-            if (h & gfx->update) {
-                if (gfx->buffer_ms[c] <= ms) {
+            if (h & gfx->update || gfx->refresh) {
+                if (gfx->buffer_ms[c] <= ms || gfx->refresh) {
         #ifndef DISABLE_UPDATE_SEQ
                     if (nx != x) {
         #endif
@@ -126,6 +127,7 @@ void lcdGFX_update(LcdGFX *gfx) {
             c++;
         }
     }
+    gfx->refresh = 0;
     gfx->update = hold_update;
 }
 

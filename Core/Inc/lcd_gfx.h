@@ -33,6 +33,7 @@ typedef struct LcdGFX {
     int8_t *buffer;          // Buffer array
     uint16_t *buffer_ms;     // Buffer timeout array
     UPDATE_MASK_TYPE update; // Update Mask
+    uint8_t refresh;
 
 } LcdGFX;
 
