@@ -25,6 +25,70 @@
 #define MCP9601_REG_TEMPERATURE_ALERT_4_LIMIT 0b00010011         // Temperature Alert 4 Limit register, TALERT4
 #define MCP9601_REG_DEVICE_ID_REVISION 0b00100000                // Device ID/Revision register
 
+typedef enum {
+    amb_res_0_0625 = 0,
+    amb_res_0_25 = 1,
+} MCP9601_CONF_AMB_RES;
+
+typedef enum {
+    adc_res_18 = 0b00,
+    adc_res_16 = 0b01,
+    adc_res_14 = 0b10,
+    adc_res_12 = 0b11,
+} MCP9601_CONF_ADC_RES;
+
+typedef enum {
+    burst_s_1 = 0b000,
+    burst_s_2 = 0b001,
+    burst_s_4 = 0b010,
+    burst_s_8 = 0b011,
+    burst_s_16 = 0b100,
+    burst_s_32 = 0b101,
+    burst_s_64 = 0b110,
+    burst_s_128 = 0b111,
+} MCP9601_CONF_BURST_SAMP;
+
+typedef enum {
+    mode_normal = 0b00,
+    mode_shutdown = 0b01,
+    mode_burst = 0b10,
+    // mode_unimplemented = 0b11,
+} MCP9601_CONF_MODE;
+
+typedef enum {
+    type_k = 0b000,
+    type_j = 0b001,
+    type_t = 0b010,
+    type_n = 0b011,
+    type_s = 0b100,
+    type_e = 0b101,
+    type_b = 0b110,
+    type_r = 0b111,
+} MCP9601_SENSE_CONF_TYPE;
+
+/**
+ *
+ * Y = k * X + (1 - k) * Y_-1
+ * k = 2 / (2^n + 1)
+ *
+ * Where:
+ *  Y = New filtered temperature in TΔ
+ *  X = Current, unfiltered hot-junction
+ *  temperatures
+ *  Y_-1 = Previous filtered temperature
+ *  n = User-selectable filter coefficient
+ */
+typedef enum {
+    filter_0 = 0b000,
+    filter_1 = 0b001,
+    filter_2 = 0b010,
+    filter_3 = 0b011,
+    filter_4 = 0b100,
+    filter_5 = 0b101,
+    filter_6 = 0b110,
+    filter_7 = 0b111,
+} MCP9601_SENSE_CONF_FILTER;
+
 typedef struct MCP9601 {
     const char *name;
     uint16_t address;
@@ -59,92 +123,28 @@ typedef struct MCP9601 {
     union MCP9601_CONF {
         uint8_t buf[2];
 
-        enum MCP9601_CONF_AMB_RES {
-            amb_res_0_0625 = 0,
-            amb_res_0_25 = 1,
-        } MCP9601_CONF_AMB_RES;
-
-        enum MCP9601_CONF_ADC_RES {
-            adc_res_18 = 0b00,
-            adc_res_16 = 0b01,
-            adc_res_14 = 0b10,
-            adc_res_12 = 0b11,
-        } MCP9601_CONF_ADC_RES;
-
-        enum MCP9601_CONF_BURST_SAMP {
-            burst_s_1 = 0b000,
-            burst_s_2 = 0b001,
-            burst_s_4 = 0b010,
-            burst_s_8 = 0b011,
-            burst_s_16 = 0b100,
-            burst_s_32 = 0b101,
-            burst_s_64 = 0b110,
-            burst_s_128 = 0b111,
-        } MCP9601_CONF_BURST_SAMP;
-
-        enum MCP9601_CONF_MODE {
-            mode_normal = 0b00,
-            mode_shutdown = 0b01,
-            mode_burst = 0b10,
-            // mode_unimplemented = 0b11,
-        } MCP9601_CONF_MODE;
-
         struct MCP9601_CONF_VAL {
-            enum MCP9601_CONF_MODE shutdown_mode : 2;
-            enum MCP9601_CONF_BURST_SAMP burst_mode_temperature_samples : 3;
-            enum MCP9601_CONF_ADC_RES adc_measurement_resolution : 2;
-            enum MCP9601_CONF_AMB_RES ambient_sensor_resolution : 1;
+            MCP9601_CONF_MODE shutdown_mode : 2;
+            MCP9601_CONF_BURST_SAMP burst_mode_temperature_samples : 3;
+            MCP9601_CONF_ADC_RES adc_measurement_resolution : 2;
+            MCP9601_CONF_AMB_RES ambient_sensor_resolution : 1;
         } val;
     } config;
 
     union MCP9601_SENSE_CONF {
         uint8_t buf[2];
 
-        enum MCP9601_SENSE_CONF_TYPE {
-            type_k = 0b000,
-            type_j = 0b001,
-            type_t = 0b010,
-            type_n = 0b011,
-            type_s = 0b100,
-            type_e = 0b101,
-            type_b = 0b110,
-            type_r = 0b111,
-        } MCP9601_SENSE_CONF_TYPE;
-
-        /**
-         *
-         * Y = k * X + (1 - k) * Y_-1
-         * k = 2 / (2^n + 1)
-         *
-         * Where:
-         *  Y = New filtered temperature in TΔ
-         *  X = Current, unfiltered hot-junction
-         *  temperatures
-         *  Y_-1 = Previous filtered temperature
-         *  n = User-selectable filter coefficient
-         */
-        enum MCP9601_SENSE_CONF_FILTER {
-            filter_0 = 0b000,
-            filter_1 = 0b001,
-            filter_2 = 0b010,
-            filter_3 = 0b011,
-            filter_4 = 0b100,
-            filter_5 = 0b101,
-            filter_6 = 0b110,
-            filter_7 = 0b111,
-        } MCP9601_SENSE_CONF_FILTER;
-
         struct MCP9601_SENSE_CONF_VAL {
-            enum MCP9601_SENSE_CONF_FILTER filter_coefficient : 3;
+            MCP9601_SENSE_CONF_FILTER filter_coefficient : 3;
             uint8_t nil_1 : 1;
-            enum MCP9601_SENSE_CONF_TYPE thermocouple_type : 3;
+            MCP9601_SENSE_CONF_TYPE thermocouple_type : 3;
             uint8_t nil_0 : 1;
         } val;
     } sensor_config;
 } MCP9601;
 
 MCP9601 *mcp9601_new(I2C_HandleTypeDef *hi2c, const char *name, uint16_t address);
-MCP9601 *mcp9601_new_common(I2C_HandleTypeDef *hi2c, const char *name, uint16_t address, enum MCP9601_CONF_ADC_RES adc_res, enum MCP9601_CONF_AMB_RES amb_res, enum MCP9601_SENSE_CONF_FILTER filter, enum MCP9601_SENSE_CONF_TYPE type);
+MCP9601 *mcp9601_new_common(I2C_HandleTypeDef *hi2c, const char *name, uint16_t address, MCP9601_CONF_ADC_RES adc_res, MCP9601_CONF_AMB_RES amb_res, MCP9601_SENSE_CONF_FILTER filter, MCP9601_SENSE_CONF_TYPE type);
 void mcp9601_free(MCP9601 *probe);
 
 void mcp9601_init(MCP9601 *probe);

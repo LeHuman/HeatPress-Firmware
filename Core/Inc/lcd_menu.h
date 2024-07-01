@@ -43,7 +43,7 @@
  *
  * Be weary of soft-locking yourself into a menu, unless you want to.
  */
-typedef enum LMSObjectType {
+typedef enum {
     // LMSObj_t,    // The base LMS object
     LMSTxt_t,    // Basic line of text, has [Enter], [Back], and [Next]
     LMSBtn_t,    // Button that can be selected and pressed, has [Enter], [Back], and [Next]
@@ -51,7 +51,7 @@ typedef enum LMSObjectType {
     LMSPage_t,   // Pages define a space for other objects, can take children objects, has all triggers
 } LMSObjectType;
 
-typedef enum LMSSignal {
+typedef enum {
     ENTER,
     UP,
     DOWN,

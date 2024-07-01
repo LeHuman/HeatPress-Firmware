@@ -11,7 +11,7 @@ MCP9601 *mcp9601_new(I2C_HandleTypeDef *hi2c, const char *name, uint16_t address
     return probe;
 }
 
-MCP9601 *mcp9601_new_common(I2C_HandleTypeDef *hi2c, const char *name, uint16_t address, enum MCP9601_CONF_ADC_RES adc_res, enum MCP9601_CONF_AMB_RES amb_res, enum MCP9601_SENSE_CONF_FILTER filter, enum MCP9601_SENSE_CONF_TYPE type) {
+MCP9601 *mcp9601_new_common(I2C_HandleTypeDef *hi2c, const char *name, uint16_t address, MCP9601_CONF_ADC_RES adc_res, MCP9601_CONF_AMB_RES amb_res, MCP9601_SENSE_CONF_FILTER filter, MCP9601_SENSE_CONF_TYPE type) {
     MCP9601 *probe = mcp9601_new(hi2c, name, address);
     probe->config.val.adc_measurement_resolution = adc_res;
     probe->config.val.ambient_sensor_resolution = amb_res;

@@ -7,7 +7,7 @@
 // Referenced Example: https://github.com/lucasmaziero/LiquidCrystal_I2C
 // Referenced Example: https://embeddedthere.com/interfacing-stm32-with-i2c-lcd-with-hal-code-example/
 
-typedef enum PCF8574_lcd_format {
+typedef enum {
     LCD_5x10DOTS = 0x04,
     LCD_5x8DOTS = 0x00,
 } PCF8574_lcd_format;

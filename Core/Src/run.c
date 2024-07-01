@@ -282,7 +282,7 @@ void page_heat_callback(LMSPage *page) {
     enable_power = 1;
     TIM9->CCR1 = 0;
     TIM9->CCR2 = 0;
-    float setpoint = (setpoint_sel_2 * 100) + (setpoint_sel_1 * 10) + setpoint_sel_0;
+    float setpoint = ((float)setpoint_sel_2 * 100.0f) + ((float)setpoint_sel_1 * 10.0f) + (float)setpoint_sel_0;
     pid_setpoint_top = setpoint;
     pid_setpoint_btm = setpoint;
 }
@@ -370,11 +370,11 @@ static inline void setup_menu() {
     lms_initialize_menu(ctx, root);
 }
 
-static inline void setup_thermal_probes() {
-    MCP9601 *bottom_0 = mcp9601_new_common(&hi2c3, "Bottom Temp Fast", 0b1100000 << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
-    MCP9601 *top_0 = mcp9601_new_common(&hi2c1, "Top Temp Fast", 0b1100000 << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
-    MCP9601 *bottom_1 = mcp9601_new_common(&hi2c3, "Bottom Temp Slow", 0b1100111 << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
-    MCP9601 *top_1 = mcp9601_new_common(&hi2c1, "Top Temp Slow", 0b1100111 << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
+static inline void setup_thermal_probes(void) {
+    MCP9601 *bottom_0 = mcp9601_new_common(&hi2c3, "Bottom Temp Fast", 0b1100000U << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
+    MCP9601 *top_0 = mcp9601_new_common(&hi2c1, "Top Temp Fast", 0b1100000U << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
+    MCP9601 *bottom_1 = mcp9601_new_common(&hi2c3, "Bottom Temp Slow", 0b1100111U << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
+    MCP9601 *top_1 = mcp9601_new_common(&hi2c1, "Top Temp Slow", 0b1100111U << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
 
     mcp9601_init(bottom_0);
     mcp9601_init(top_0);
@@ -390,7 +390,7 @@ static inline void setup_thermal_probes() {
     mcp_to_btm.timeout = 3000;
 }
 
-static inline void setup_pid() {
+static inline void setup_pid(void) {
     PID(&pid_top, &temperature_top, &pid_out_top, &pid_setpoint_top, 2, 5, 1, _PID_P_ON_E, _PID_CD_DIRECT);
     PID(&pid_btm, &temperature_btm, &pid_out_btm, &pid_setpoint_btm, 2, 5, 1, _PID_P_ON_E, _PID_CD_DIRECT);
     PID_SetMode(&pid_top, _PID_MODE_AUTOMATIC);
@@ -401,7 +401,7 @@ static inline void setup_pid() {
     PID_SetSampleTime(&pid_btm, 17);
 }
 
-static inline void setup_timers() {
+static inline void setup_timers(void) {
     HAL_NVIC_EnableIRQ(TIM2_IRQn);
     HAL_NVIC_EnableIRQ(TIM5_IRQn);
     HAL_NVIC_EnableIRQ(TIM4_IRQn);
@@ -441,18 +441,19 @@ void run() {
     enable_input = 1;
 
     timeout_t temp_to = {.timeout = 3000};
-    uint32_t noti = 0, noti_last = 0;
+    uint32_t noti = 0;
+    uint32_t noti_last = 0;
 
     while (1) {
-        if (enable_power) {
-            sprintf(temp_top_str, "% 5.1fC", temperature_top);
-            sprintf(temp_btm_str, "% 5.1fC", temperature_btm);
-            sprintf(pid_top_str, "% 5.1f", pid_out_top == 0.0f ? 0 : (pid_out_top / (PID_SCALE / 100)));
-            sprintf(pid_btm_str, "% 5.1f", pid_out_btm == 0.0f ? 0 : (pid_out_btm / (PID_SCALE / 100)));
-            sprintf(err_str, "%c%c%c%c", mcp9601_err_str(mcps[1])[0], mcp9601_err_str(mcps[3])[0], mcp9601_err_str(mcps[0])[0], mcp9601_err_str(mcps[2])[0]);
+        if (enable_power != 0U) {
+            (void)sprintf(temp_top_str, "% 5.1fC", temperature_top);
+            (void)sprintf(temp_btm_str, "% 5.1fC", temperature_btm);
+            (void)sprintf(pid_top_str, "% 5.1f", (pid_out_top == 0.0f) ? 0.0f : (pid_out_top / (PID_SCALE / 100.0f)));
+            (void)sprintf(pid_btm_str, "% 5.1f", (pid_out_btm == 0.0f) ? 0.0f : (pid_out_btm / (PID_SCALE / 100.0f)));
+            (void)sprintf(err_str, "%c%c%c%c", mcp9601_err_str(mcps[1])[0], mcp9601_err_str(mcps[3])[0], mcp9601_err_str(mcps[0])[0], mcp9601_err_str(mcps[2])[0]);
         }
 
-        if (noti) {
+        if (noti != 0U) {
             noti_last++;
             if (noti_last > noti) {
                 lcdGFX_clear_buffer(gfx);
@@ -461,7 +462,7 @@ void run() {
             }
         }
 
-        static timeout_t force_refresh = {10000};
+        static timeout_t force_refresh = {.timeout = 10000};
 
         if (check_timeout(&force_refresh)) {
             // lcdGFX_clear_buffer(gfx);
@@ -471,19 +472,19 @@ void run() {
 
         lms_update_menu(ctx);
 
-        if (temperature_top >= 60 || temperature_btm >= 60) {
+        if ((temperature_top >= 60.0f) || (temperature_btm >= 60.0f)) {
             pcf8574_lcd_set_cursor(lcd, 0, 19);
             pcf8574_lcd_send_data(lcd, 1);
             noti++;
         }
 
-        if (TIM9->CCR1 > 0 || TIM9->CCR2 > 0) {
+        if ((TIM9->CCR1 > 0) || (TIM9->CCR2 > 0)) {
             pcf8574_lcd_set_cursor(lcd, 1, 19);
             pcf8574_lcd_send_data(lcd, 2);
             noti++;
         }
 
-        if (temperature_btm > 250 || temperature_top > 250) { // After reading > 250C for more than 3 seconds the system will auto shut-off
+        if ((temperature_btm > 250.0f) || (temperature_top > 250.0f)) { // After reading > 250C for more than 3 seconds the system will auto shut-off
             pcf8574_lcd_set_cursor(lcd, 2, 19);
             pcf8574_lcd_send_data(lcd, 0);
             noti++;
