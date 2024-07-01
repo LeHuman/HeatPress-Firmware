@@ -92,7 +92,7 @@ void pcf8574_lcd_send_cmd(PCF8574_LCD *lcd, uint8_t cmd) {
     uint8_t lower_nibble = cmd & 0x0F;
     pcf8574_lcd_write_nibble(lcd, upper_nibble, 0);
     pcf8574_lcd_write_nibble(lcd, lower_nibble, 0);
-    if (cmd == CMD_CLEARDISPLAY || cmd == CMD_RETURNHOME) {
+    if ((cmd == CMD_CLEARDISPLAY) || (cmd == CMD_RETURNHOME)) {
         delay_ms(2);
     }
 }

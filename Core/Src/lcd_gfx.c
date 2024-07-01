@@ -39,8 +39,8 @@ void lcdGFX_free(LcdGFX *gfx) {
     free(gfx);
 }
 
-static inline UPDATE_MASK_TYPE lcdGFX_hash(int i) {
-    return 1 << (i % (sizeof(UPDATE_MASK_TYPE) * 8));
+static inline mask_update_t lcdGFX_hash(int i) {
+    return 1 << (i % (sizeof(mask_update_t) * 8));
 }
 
 static inline gfx_int lcdGFX_xy2abs(LcdGFX *gfx, const gfx_int x, const gfx_int y) {
@@ -76,7 +76,7 @@ void lcdGFX_update(LcdGFX *gfx) {
 
     uint16_t c = 0;
 
-    UPDATE_MASK_TYPE hold_update = 0;
+    mask_update_t hold_update = 0;
 
 #ifndef DISABLE_UPDATE_SEQ
     uint16_t nx = 0;
@@ -102,7 +102,7 @@ void lcdGFX_update(LcdGFX *gfx) {
                 // ny = (y + (nx == 0)) % gfx->lcd->rows;
             }
     #else
-            UPDATE_MASK_TYPE h = lcdGFX_hash(c);
+            mask_update_t h = lcdGFX_hash(c);
             if (h & gfx->update || gfx->refresh) {
                 if (gfx->buffer_ms[c] <= ms || gfx->refresh) {
         #ifndef DISABLE_UPDATE_SEQ

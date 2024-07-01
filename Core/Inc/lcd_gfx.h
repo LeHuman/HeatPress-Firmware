@@ -4,10 +4,8 @@
 
 #include "main.h"
 #include "pcf8574_lcd.h"
-#include "stdint-gcc.h" // BROKEN: Remove me
 
-#define UPDATE_MASK_TYPE uint32_t
-
+typedef uint32_t mask_update_t;
 typedef int16_t gfx_int;
 
 typedef struct LcdGFX {
@@ -30,9 +28,9 @@ typedef struct LcdGFX {
         gfx_int h;
     } current_graphic;
 
-    int8_t *buffer;          // Buffer array
-    uint16_t *buffer_ms;     // Buffer timeout array
-    UPDATE_MASK_TYPE update; // Update Mask
+    int8_t *buffer;       // Buffer array
+    uint16_t *buffer_ms;  // Buffer timeout array
+    mask_update_t update; // Update Mask
     uint8_t refresh;
 
 } LcdGFX;

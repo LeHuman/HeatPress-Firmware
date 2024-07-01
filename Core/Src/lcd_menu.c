@@ -24,21 +24,26 @@ void lms_set_menu_focus(LMSContext *ctx, LMSObj *object) {
                 LMSTxt *txt = (LMSTxt *)object->object.data;
                 to_focus = txt->parent;
                 break;
+
             case LMSNumSel_t:
                 LMSNumSel *num = (LMSNumSel *)object->object.data;
                 to_focus = num->parent;
                 break;
+
             case LMSBtn_t:
                 LMSBtn *btn = (LMSBtn *)object->object.data;
                 to_focus = btn->parent;
                 break;
+
             case LMSPage_t:
                 to_focus = (LMSPage *)object->object.data;
                 break;
+
             default:
                 to_focus = NULL;
                 break;
         }
+
         if (to_focus != NULL) {
             ctx->focus = object;
             if (ctx->current_page != to_focus) { // Swap to new page
@@ -184,10 +189,11 @@ LMSPage *lms_new_page(LMSContext *ctx, const char *name, coord width, coord heig
 }
 
 void lms_free_page(LMSPage *page) {
-    free(page->children);
+    for (size_t i = 0; i < page->len; i++) {
+        free(page->children + i);
+    }
     free(page->base);
     free(page);
-    // TODO : free all children
 }
 
 void lms_insert_child(LMSPage *page, LMSObj *obj) {
