@@ -55,7 +55,11 @@ void lms_set_menu_focus(LMSContext *ctx, LMSObj *object) {
                     to_focus->callback(to_focus);
                 }
                 // lms_set_menu_page(ctx, to_focus);
+                lms_default_tr_next(object);
             }
+            // if (to_focus == (LMSPage *)object) { // If we are focusing a page, attempt to switch to the next item within it.
+            //     lms_default_tr_next(object);
+            // }
         }
     }
 }
@@ -307,6 +311,7 @@ LMSContext *lms_initialize_menu(LMSContext *ctx, LMSPage *root_page) {
     ctx->focus = root_page->base;
 
     lcdGFX_initialize(ctx->gfx);
+    lms_default_tr_next(ctx->focus);
 
     return ctx;
 }

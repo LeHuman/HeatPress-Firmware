@@ -21,11 +21,11 @@ float temperature_top, temperature_btm;
 float pid_out_top, pid_out_btm;
 float pid_setpoint_top, pid_setpoint_btm;
 
-#define MCP_SLOW_WEIGHT 0.6
-#define MCP_FAST_WEIGHT 0.4
+#define MCP_SLOW_WEIGHT 0.6f
+#define MCP_FAST_WEIGHT 0.4f
 #define MCP_AVG_BUF 5
 
-#define PID_MAX_VAL ((uint32_t)(65535 / 4))
+#define PID_MAX_VAL ((uint32_t)(65535))
 #define TEMP_ERROR_PERCENT 0.15f
 
 MCP9601 *mcps[4] = {0};
@@ -69,7 +69,7 @@ float calc_temp(MCP9601 *mcp_slow, MCP9601 *mcp_fast, float last_temp, timeout_t
     f_fail = f_fail && (fast_temp < last_temp_lt || fast_temp > last_temp_gt);
 
     if (s_fail && f_fail) {
-        TIM3->CCR3 = (((float)timeout->value) / timeout->timeout) * 65535;
+        TIM3->CCR3 = (uint32_t)((((float)timeout->value) / (float)timeout->timeout) * 65535.0f);
         // TODO: handle worst case
         if (check_timeout(timeout)) { // After a second of failed sensors
             return 300;               // Assume everything is really hot
@@ -94,7 +94,7 @@ int compareFloats(const void *a, const void *b) {
     return (fa > fb) - (fa < fb);
 }
 
-float median(float arr[], int n) {
+float median(float arr[], unsigned int n) {
     qsort(arr, n, sizeof(float), compareFloats);
 
     if (n % 2 == 0) {
@@ -126,11 +126,15 @@ void set_temperatures() {
 void on_TIM2_update(TIM_HandleTypeDef *htim) {
     static uint32_t last = 0;
     uint32_t curr = TIM2->CNT;
+    static timeout_t bounce = {.timeout = 60};
     if (enable_input) {
-        if (curr < last) {
-            lms_signal_menu(ctx, DOWN);
-        } else if (curr > last) {
-            lms_signal_menu(ctx, UP);
+        if (check_timeout(&bounce)) {
+            reset_timeout(&bounce);
+            if (curr < last) {
+                lms_signal_menu(ctx, DOWN);
+            } else if (curr > last) {
+                lms_signal_menu(ctx, UP);
+            }
         }
     }
     last = curr;
@@ -139,14 +143,14 @@ void on_TIM2_update(TIM_HandleTypeDef *htim) {
 void on_TIM_17ms(TIM_HandleTypeDef *htim) {
     if (enable_pid) {
         if (PID_Compute(&pid_top)) {
-            uint32_t val = pid_out_top == 0.0f ? 0 : ((pid_out_top / PID_SCALE) * ((float)PID_MAX_VAL));
+            uint32_t val = (pid_out_top == 0.0f) ? 0 : (uint32_t)((pid_out_top / PID_SCALE) * ((float)PID_MAX_VAL));
             val = (val > PID_MAX_VAL) ? PID_MAX_VAL : val;
             if (enable_power) {
                 TIM9->CCR1 = val;
             }
         }
         if (PID_Compute(&pid_btm)) {
-            uint32_t val = pid_out_btm == 0.0f ? 0 : ((pid_out_btm / PID_SCALE) * ((float)PID_MAX_VAL));
+            uint32_t val = (pid_out_btm == 0.0f) ? 0 : (uint32_t)((pid_out_btm / PID_SCALE) * ((float)PID_MAX_VAL));
             val = (val > PID_MAX_VAL) ? PID_MAX_VAL : val;
             if (enable_power) {
                 TIM9->CCR2 = val;
@@ -170,7 +174,7 @@ void on_TIM_20ms(TIM_HandleTypeDef *htim) {
     }
 }
 
-timeout_t enter_bounce = {50}, back_bounce = {50}, cancel_bounce = {50};
+timeout_t enter_bounce = {.timeout = 60}, back_bounce = {.timeout = 30}, cancel_bounce = {.timeout = 30};
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     if (enable_input) {
@@ -179,14 +183,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
                 if (HAL_GPIO_ReadPin(Rotary_SW_GPIO_Port, Rotary_SW_Pin) == GPIO_PIN_RESET) { // Check if button 'down'
                     reset_timeout(&enter_bounce);
                 } else if (check_timeout(&enter_bounce)) {                                    // if button goes up after minimum set by timeout, button push is good.
-                    lms_signal_menu(ctx, ENTER);
+                    lms_signal_menu(ctx, BACK);
                 }
                 break;
             case Button_Back_Pin:
                 if (HAL_GPIO_ReadPin(Button_Back_GPIO_Port, Button_Back_Pin) == GPIO_PIN_RESET) {
                     reset_timeout(&back_bounce);
                 } else if (check_timeout(&back_bounce)) {
-                    lms_signal_menu(ctx, BACK);
+                    lms_signal_menu(ctx, ENTER);
                 }
                 break;
             case Button_Cancel_Pin:
@@ -196,6 +200,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
                     lms_signal_menu(ctx, CANCEL);
                 }
                 break;
+            default:
+            	break;
         }
     } else {
         reset_timeout(&enter_bounce);
@@ -371,10 +377,10 @@ static inline void setup_menu() {
 }
 
 static inline void setup_thermal_probes(void) {
-    MCP9601 *bottom_0 = mcp9601_new_common(&hi2c3, "Bottom Temp Fast", 0b1100000U << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
-    MCP9601 *top_0 = mcp9601_new_common(&hi2c1, "Top Temp Fast", 0b1100000U << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
-    MCP9601 *bottom_1 = mcp9601_new_common(&hi2c3, "Bottom Temp Slow", 0b1100111U << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
-    MCP9601 *top_1 = mcp9601_new_common(&hi2c1, "Top Temp Slow", 0b1100111U << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
+    MCP9601 *bottom_0 = mcp9601_new_common(&hi2c1, "Bottom Temp Fast", 0b1100000U << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
+    MCP9601 *top_0 = mcp9601_new_common(&hi2c3, "Top Temp Fast", 0b1100000U << 1, adc_res_14, amb_res_0_25, filter_2, type_k);
+    MCP9601 *bottom_1 = mcp9601_new_common(&hi2c1, "Bottom Temp Slow", 0b1100111U << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
+    MCP9601 *top_1 = mcp9601_new_common(&hi2c3, "Top Temp Slow", 0b1100111U << 1, adc_res_18, amb_res_0_0625, filter_4, type_k);
 
     mcp9601_init(bottom_0);
     mcp9601_init(top_0);
